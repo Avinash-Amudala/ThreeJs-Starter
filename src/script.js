@@ -1,161 +1,128 @@
-import * as THREE from 'three'
-import {OrbitControls}  from "three/addons/controls/OrbitControls.js";
-import './style.css'
-import * as dat from 'lil-gui'
-import {gsap} from 'gsap'
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import * as dat from 'lil-gui';
 
-/**
- * Debug
- */
-const gui = new dat.GUI()
-
-/**
- * Cursor
- */
-const cursor = {
-    x: 0,
-    y: 0
-}
-//window.addEventListener("mousemove", (event) => {
- //   cursor.x = event.clientX / sizes.width - 0.5
-  //  cursor.y = -(event.clientY / sizes.width - 0.5)
-  //  console.log(cursor.x)
-//} )
-
-/**
- * Base
- */
 // Canvas
-const canvas = document.querySelector('canvas.webgl')
+const canvas = document.querySelector('canvas.webgl');
+
+// Scene
+const scene = new THREE.Scene();
+
+// Textures
+const textureLoader = new THREE.TextureLoader();
+
+const torusKnotGeometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
+
+// Define metal and plastic materials
+const metalMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 1, roughness: 0.5 });
+const plasticMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0, roughness: 0.6 });
+
+// Set up lights
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+directionalLight.position.set(1, 1, 1);
+scene.add(directionalLight);
+
+// Add torus knot with metal material
+const torusKnotMetal = new THREE.Mesh(torusKnotGeometry, metalMaterial);
+torusKnotMetal.position.set(-1.5, 0, 0);
+scene.add(torusKnotMetal);
+
+// Add more torus knots
+for (let i = 1; i <= 5; i++) {
+    const torusKnot = new THREE.Mesh(torusKnotGeometry, metalMaterial);
+    torusKnot.position.set(-1.5 + i * 0.5, 0, 0);
+    scene.add(torusKnot);
+}
+
+let textMesh;
+
+// FontLoader
+const fontLoader = new FontLoader();
+fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+    const textGeometry = new TextGeometry('Testing Object!', {
+        font: font,
+        size: 0.5,
+        height: 0.1,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelOffset: 0,
+        bevelSegments: 5
+    });
+    textMesh = new THREE.Mesh(textGeometry, metalMaterial);
+    textMesh.position.set(2, 0, 0);
+    scene.add(textMesh);
+});
 
 // Sizes
 const sizes = {
     width: window.innerWidth,
     height: window.innerHeight
-}
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
-
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
-
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-})
-
-window.addEventListener('dblclick', () =>
-{
-    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
-
-    if(!fullscreenElement)
-    {
-        if(canvas.requestFullscreen)
-        {
-            canvas.requestFullscreen()
-        }
-        else if(canvas.webkitRequestFullscreen)
-        {
-            canvas.webkitRequestFullscreen()
-        }
-    }
-    else
-    {
-        if(document.exitFullscreen)
-        {
-            document.exitFullscreen()
-        }
-        else if(document.webkitExitFullscreen)
-        {
-            document.webkitExitFullscreen()
-        }
-    }
-})
-// Scene
-const scene = new THREE.Scene()
-
-// Object
-const geometry = new THREE.BoxGeometry(1, 1, 1, 5, 5, 5)
-const material = new THREE.MeshBasicMaterial({color: 'orange'})
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
-
-// Debug
-gui
-    .add(mesh.position, 'y')
-    .min( -3)
-    .max(3)
-    .step(0.01)
-    .name('elevation')
-
-gui.add(mesh,'visible')
-gui.add(material, 'wireframe')
-const parameters = {
-    color: 0xff0000,
-    spin: () =>
-    {
-        gsap.to(mesh.rotation, { duration: 1, y: mesh.rotation.y + Math.PI * 2 })
-    }
-}
-gui.add(parameters, 'spin')
-gui.addColor(parameters, 'color')
-    .onChange(() =>
-    {
-        material.color.set(parameters.color)
-    })
-
+};
 
 // Camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-
-//const aspectRatio = sizes.width / sizes.height
-//const camera = new THREE.OrthographicCamera(-1*aspectRatio,
- //   1*aspectRatio,
-   // 1,-1, 0.1,2000)
-//camera.position.x = 2
-//camera.position.y = 2
-camera.position.z = 3
-
-camera.lookAt(mesh.position)
-scene.add(camera)
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
+camera.position.x = 2;
+camera.position.y = 2;
+camera.position.z = 2;
+scene.add(camera);
 
 // Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
-})
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0xdddddd);
+
+// Base
+const baseGeometry = new THREE.PlaneGeometry(10, 10);
+const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+const base = new THREE.Mesh(baseGeometry, baseMaterial);
+base.rotation.x = -Math.PI / 2;
+base.position.y = -5;
+scene.add(base);
 
 // Animate
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
-const tick = () =>
-{
-    const elapsedTime = clock.getElapsedTime()
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime();
 
-    // Update objects
-    //mesh.rotation.y = elapsedTime;
-
-    // Update Camera
-    //camera.position.x = Math.sin(cursor.x*Math.PI*2)*3
-    //camera.position.z = Math.cos(cursor.x*Math.PI*2)*3
-    //camera.position.y = cursor.y*5
-    //camera.lookAt(mesh.position)
-
-    // Update Controls
-    controls.update()
+    // Update controls
+    controls.update();
 
     // Render
-    renderer.render(scene, camera)
+    renderer.render(scene, camera);
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-}
+    window.requestAnimationFrame(tick);
+};
 
-tick()
+tick();
+
+// GUI Controls
+const gui = new dat.GUI();
+const materialFolder = gui.addFolder('Metal');
+materialFolder.addColor(metalMaterial, 'color'); // color control for metal material
+materialFolder.add(metalMaterial, 'metalness').min(0).max(1).step(0.01);
+materialFolder.add(metalMaterial, 'roughness').min(0).max(1).step(0.01);
+materialFolder.open();
+
+const plasticFolder = gui.addFolder('Plastic');
+plasticFolder.add(plasticMaterial, 'metalness').min(0).max(1).step(0.01);
+plasticFolder.add(plasticMaterial, 'roughness').min(0).max(1).step(0.01);
+plasticFolder.open();
+
+const baseFolder = gui.addFolder('Base');
+baseFolder.addColor(baseMaterial, 'color');  // Base color control
+baseFolder.open();
